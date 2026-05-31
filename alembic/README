@@ -1,0 +1,14 @@
+Async Alembic environment for the Smart University Management System.
+
+Common commands (run from the project root):
+
+  # Autogenerate a new migration after model changes
+  alembic revision --autogenerate -m "describe change"
+
+  # Apply migrations
+  alembic upgrade head
+
+  # Roll back one migration
+  alembic downgrade -1
+
+The database URL is read from application settings (.env DATABASE_URL).
