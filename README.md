@@ -68,6 +68,10 @@ uvicorn app.main:app --reload
 
 Open http://localhost:8000/docs for Swagger.
 
+**Frontend integration:**
+- [docs/FRONTEND_API_GUIDE.md](docs/FRONTEND_API_GUIDE.md) — API contracts, request/response examples, React & Flutter snippets
+- [docs/AI_AGENT_FRONTEND_PROMPTS.md](docs/AI_AGENT_FRONTEND_PROMPTS.md) — copy-paste AI agent prompts to generate the full React admin web and Flutter student mobile apps
+
 > Tip: for fully offline dev, set `STORAGE_BACKEND=local` to store attachments on
 > disk instead of Backblaze B2.
 
