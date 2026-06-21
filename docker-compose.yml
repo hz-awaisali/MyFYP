@@ -37,7 +37,7 @@ services:
       B2_REGION: ${B2_REGION:-us-west-004}
       SEED_ON_START: ${SEED_ON_START:-true}
     ports:
-      - "8000:8000"
+      - "5000:5000"
 
 volumes:
   postgres_data:
