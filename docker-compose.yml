@@ -3,15 +3,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-sums}
+      POSTGRES_USER: ${POSTGRES_USER:-awais}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Awais@postgresql}
+      POSTGRES_DB: ${POSTGRES_DB:-fyp}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-awais}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,17 +24,17 @@ services:
         condition: service_healthy
     environment:
       # Inside the compose network the DB host is the service name "db".
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/sums}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
-      JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-change-me-too-in-production}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://awais:Awais@db:5432/fyp}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-PECHO}
+      JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-PECHO_REFRESH}
       SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-admin@university.edu}
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-Admin@12345}
       STORAGE_BACKEND: ${STORAGE_BACKEND:-b2}
-      B2_KEY_ID: ${B2_KEY_ID:-}
-      B2_APPLICATION_KEY: ${B2_APPLICATION_KEY:-}
-      B2_BUCKET_NAME: ${B2_BUCKET_NAME:-}
-      B2_ENDPOINT_URL: ${B2_ENDPOINT_URL:-}
-      B2_REGION: ${B2_REGION:-us-west-004}
+      B2_KEY_ID: ${B2_KEY_ID:-bd8386ebc7f0}
+      B2_APPLICATION_KEY: ${B2_APPLICATION_KEY:-003559018b3e55245f87f9a9d120289d7e0300a52f}
+      B2_BUCKET_NAME: ${B2_BUCKET_NAME:-MyFYP26}
+      B2_ENDPOINT_URL: ${B2_ENDPOINT_URL:-s3.eu-central-003.backblazeb2.com}
+      B2_REGION: ${B2_REGION:-eu-central-003}
       SEED_ON_START: ${SEED_ON_START:-true}
     ports:
       - "5000:5000"
