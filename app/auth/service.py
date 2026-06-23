@@ -78,7 +78,10 @@ class AuthService:
         await self.profiles.add(profile)
 
         await self.session.commit()
-        return await self.users.get_with_relations(user.id)
+        created_user = await self.users.get_with_relations(user.id)
+        if created_user is None:
+            raise RuntimeError("Failed to load created user after registration")
+        return created_user
 
     async def authenticate(self, email: str, password: str) -> tuple[User, TokenPair]:
         user = await self.users.get_by_email(email)
