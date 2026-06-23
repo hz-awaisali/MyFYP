@@ -1,7 +1,14 @@
 """Role and Permission models (RBAC)."""
 
+from __future__ import annotations
+
 from sqlalchemy import Column, ForeignKey, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # import for type checking / forward references to avoid NameError at runtime
+    from app.users.models import User  # noqa: F401
 
 from app.common.models import Base, TimestampMixin, UUIDMixin
 

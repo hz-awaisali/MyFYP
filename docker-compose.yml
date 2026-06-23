@@ -24,7 +24,8 @@ services:
         condition: service_healthy
     environment:
       # Inside the compose network the DB host is the service name "db".
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@144.91.122.229:5432/fyp}
+      # Use the same POSTGRES_* env vars so compose-internal networking works.
+      DATABASE_URL: "${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-fyp}}"
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-PECHO}
       JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-PECHO_REFRESH}
       SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-admin@university.edu}
