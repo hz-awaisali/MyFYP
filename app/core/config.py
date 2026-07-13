@@ -23,6 +23,23 @@ class Settings(BaseSettings):
     # Example: postgresql+asyncpg://user:pass@host:5432/dbname
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/sums"
 
+    @classmethod
+    def assemble_db_connection(cls, v: str) -> str:
+        if not v:
+            return v
+        if v.startswith("postgres://"):
+            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
+    # Using pydantic's field_validator to automatically clean up the URL
+    from pydantic import field_validator
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
+        return cls.assemble_db_connection(v)
+
     # --- Security / JWT ---
     JWT_SECRET_KEY: str = "change-me-in-production"
     JWT_REFRESH_SECRET_KEY: str = "change-me-too-in-production"
