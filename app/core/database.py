@@ -9,6 +9,25 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.core.config import settings
+from urllib.parse import urlsplit
+
+def get_masked_url(url: str) -> str:
+    try:
+        parsed = urlsplit(url)
+        netloc = ""
+        if parsed.username:
+            netloc += parsed.username
+            if parsed.password:
+                netloc += ":******"
+            netloc += "@"
+        netloc += parsed.hostname or ""
+        if parsed.port:
+            netloc += f":{parsed.port}"
+        return f"{parsed.scheme}://{netloc}{parsed.path}"
+    except Exception:
+        return url
+
+print(f"APP DATABASE_URL: {get_masked_url(settings.DATABASE_URL)}")
 
 engine = create_async_engine(
     settings.DATABASE_URL,

@@ -13,6 +13,25 @@ from app.registry import Base  # imports all models for autogenerate
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
+from urllib.parse import urlsplit
+def get_masked_url(url: str) -> str:
+    try:
+        parsed = urlsplit(url)
+        netloc = ""
+        if parsed.username:
+            netloc += parsed.username
+            if parsed.password:
+                netloc += ":******"
+            netloc += "@"
+        netloc += parsed.hostname or ""
+        if parsed.port:
+            netloc += f":{parsed.port}"
+        return f"{parsed.scheme}://{netloc}{parsed.path}"
+    except Exception:
+        return url
+
+print(f"ALEMBIC DATABASE_URL: {get_masked_url(settings.DATABASE_URL)}")
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
