@@ -54,7 +54,22 @@ def _error_payload(error_code: str, message: str, details=None) -> dict:
     return payload
 
 
+from sqlalchemy.exc import IntegrityError
+
 def register_exception_handlers(app: FastAPI) -> None:
+    @app.exception_handler(IntegrityError)
+    async def _integrity_error_handler(_: Request, exc: IntegrityError):
+        message = "Database integrity constraint violation."
+        orig_msg = str(exc.orig) if exc.orig else str(exc)
+        if "foreign key" in orig_msg.lower():
+            message = "The referenced program_id or department_id does not exist."
+        elif "duplicate key" in orig_msg.lower() or "unique constraint" in orig_msg.lower():
+            message = "A record with this unique value already exists."
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=_error_payload("integrity_error", message),
+        )
+
     @app.exception_handler(AppException)
     async def _app_exception_handler(_: Request, exc: AppException):
         return JSONResponse(
