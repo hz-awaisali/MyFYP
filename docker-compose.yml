@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-fyp}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - fyp_postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -41,4 +41,4 @@ services:
       - "5000:5000"
 
 volumes:
-  postgres_data:
+  fyp_postgres_data:
