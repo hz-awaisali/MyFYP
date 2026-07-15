@@ -13,6 +13,7 @@ from app.applications.models import (
 )
 from app.common.enums import ApplicationStatus
 from app.common.repository import BaseRepository
+from app.users.models import User
 
 
 class CategoryRepository(BaseRepository[ApplicationCategory]):
@@ -80,7 +81,11 @@ class ApplicationRepository(BaseRepository[Application]):
         stmt = (
             select(Application)
             .where(Application.id == id_)
-            .options(selectinload(Application.responses))
+            .options(
+                selectinload(Application.responses),
+                selectinload(Application.category),
+                selectinload(Application.student).selectinload(User.student_profile),
+            )
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
@@ -93,6 +98,7 @@ class ApplicationRepository(BaseRepository[Application]):
         department_id: uuid.UUID | None = None,
         category_id: uuid.UUID | None = None,
         status: ApplicationStatus | None = None,
+        term: str | None = None,
     ) -> tuple[list[Application], int]:
         conditions = []
         if student_id is not None:
@@ -103,6 +109,8 @@ class ApplicationRepository(BaseRepository[Application]):
             conditions.append(Application.category_id == category_id)
         if status is not None:
             conditions.append(Application.status == status)
+        if term:
+            conditions.append(Application.subject.ilike(f"%{term}%"))
 
         stmt = select(Application).options(selectinload(Application.responses))
         count_stmt = select(func.count()).select_from(Application)

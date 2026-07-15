@@ -30,5 +30,6 @@ async def list_audit_logs(
         entity_type=entity_type,
         entity_id=entity_id,
         actor_id=actor_id,
+        term=pagination.search,
     )
     return Page(items=items, meta=build_page_meta(total, pagination.page, pagination.size))

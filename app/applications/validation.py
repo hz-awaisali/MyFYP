@@ -12,6 +12,43 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _PHONE_RE = re.compile(r"^\+?[0-9\s\-()]{7,20}$")
 
 
+def evaluate_visibility(rule: dict | None, responses: dict[str, Any]) -> bool:
+    """Evaluate if a field should be visible based on prior answers in ``responses``."""
+    if not rule:
+        return True
+    field_key = rule.get("field")
+    operator = rule.get("operator", "equals")
+    rule_value = rule.get("value")
+
+    if not field_key:
+        return True
+
+    actual_value = responses.get(field_key)
+
+    # If the controlling field wasn't provided or is empty, we assume the target field is hidden
+    if actual_value is None or actual_value == "":
+        return False
+
+    if operator in ("equals", "eq"):
+        return str(actual_value) == str(rule_value)
+    elif operator in ("not_equals", "ne"):
+        return str(actual_value) != str(rule_value)
+    elif operator in ("contains",):
+        return str(rule_value) in str(actual_value)
+    elif operator in ("greater_than", "gt"):
+        try:
+            return float(actual_value) > float(rule_value)
+        except (ValueError, TypeError):
+            return False
+    elif operator in ("less_than", "lt"):
+        try:
+            return float(actual_value) < float(rule_value)
+        except (ValueError, TypeError):
+            return False
+
+    return True
+
+
 def validate_responses(
     fields: list[ApplicationField], responses: dict[str, Any]
 ) -> dict[str, str | None]:
@@ -28,7 +65,15 @@ def validate_responses(
     if unknown:
         raise ValidationError(f"Unknown field(s): {', '.join(sorted(unknown))}")
 
-    for field in fields:
+    # Sort fields to ensure sequential dependencies are evaluated in display order
+    sorted_fields = sorted(fields, key=lambda f: f.display_order)
+
+    for field in sorted_fields:
+        visible = evaluate_visibility(field.visibility_rule, normalized)
+        if not visible:
+            normalized[field.key] = None
+            continue
+
         raw = responses.get(field.key, None)
         provided = raw is not None and raw != ""
 

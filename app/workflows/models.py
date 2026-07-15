@@ -6,6 +6,10 @@ approval chain can be configured without code changes.
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.users.models import User
 
 from sqlalchemy import Boolean, DateTime
 from sqlalchemy import Enum as SAEnum
@@ -103,3 +107,5 @@ class WorkflowAction(UUIDMixin, TimestampMixin, Base):
     to_status: Mapped[str | None] = mapped_column(String(50))
 
     instance: Mapped[WorkflowInstance] = relationship(back_populates="actions")
+    actor: Mapped["User | None"] = relationship(lazy="selectin")
+    step: Mapped["WorkflowStep | None"] = relationship(lazy="selectin")

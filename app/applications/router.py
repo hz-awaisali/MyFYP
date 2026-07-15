@@ -2,19 +2,22 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.applications.pdf_generator import generate_application_pdf
 
 from app.applications.schemas import (
+    AIDraftRequest,
     ApplicationActionInput,
     ApplicationCreate,
     ApplicationRead,
+    SLAResult,
 )
 from app.applications.service import ApplicationService
 from app.common.enums import ApplicationStatus
 from app.common.schemas import Page
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_client_ip
+from app.core.deps import CurrentUser, get_client_ip, require_permissions
 from app.core.pagination import PaginationParams, build_page_meta, pagination_params
 from app.workflows.repository import WorkflowInstanceRepository
 from app.workflows.schemas import WorkflowInstanceRead
@@ -37,6 +40,7 @@ async def list_applications(
         limit=pagination.limit,
         status=status,
         category_id=category_id,
+        term=pagination.search,
     )
     return Page(items=items, meta=build_page_meta(total, pagination.page, pagination.size))
 
@@ -105,3 +109,50 @@ async def application_timeline(
 
         raise NotFoundError("No workflow instance for this application")
     return instance
+
+
+@router.post("/ai-draft", response_model=ApplicationRead, status_code=201)
+async def create_ai_draft_application(
+    data: AIDraftRequest,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+    _=Depends(require_permissions("use_ai_assistant")),
+):
+    """Generate a draft application using the AI assistant."""
+    return await ApplicationService(db).generate_ai_draft(
+        prompt=data.prompt,
+        form_id=data.form_id,
+        category_id=data.category_id,
+        user=current_user,
+    )
+
+
+@router.post("/check-slas", response_model=SLAResult, dependencies=[Depends(require_permissions("manage_settings"))])
+async def check_slas(db: AsyncSession = Depends(get_db)):
+    """Scan for applications that breached SLA and notify assignees."""
+    return await ApplicationService(db).check_slas_and_notify_assignees()
+
+
+@router.get("/{application_id}/export")
+async def export_application_pdf(
+    application_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+):
+    """Export an approved/completed application as a PDF file."""
+    application = await ApplicationService(db).get_for_user(application_id, current_user)
+
+    if application.status not in (ApplicationStatus.APPROVED, ApplicationStatus.COMPLETED):
+        from app.core.exceptions import ValidationError
+        raise ValidationError("Only approved or completed applications can be exported to PDF")
+
+    pdf_bytes = generate_application_pdf(application)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=application_{application_id}.pdf"
+        },
+    )
+

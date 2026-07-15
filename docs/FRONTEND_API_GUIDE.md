@@ -621,12 +621,14 @@ Returns `CategoryDetail` with `forms[].fields[]`. Use the **active** form (highe
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/applications` | User (scoped) | List applications |
+| GET | `/applications` | User (scoped) | List applications (supports `search` query parameter) |
 | POST | `/applications` | User (student) | Create **draft** |
 | GET | `/applications/{id}` | User (scoped) | Get one |
 | POST | `/applications/{id}/submit` | Owner / admin | Submit → starts workflow |
 | POST | `/applications/{id}/actions` | `approve_application` | Officer workflow action |
-| GET | `/applications/{id}/timeline` | User (scoped) | Workflow instance + history |
+| GET | `/applications/{id}/timeline` | User (scoped) | Workflow instance + history (with eager actor/step details) |
+| POST | `/applications/check-slas` | `manage_settings` | Run SLA check and trigger assignee notifications |
+| GET | `/applications/{id}/export` | User (scoped) | Export approved/completed application as PDF |
 
 #### List scoping (server-side — do not filter only on client)
 
@@ -636,7 +638,9 @@ Returns `CategoryDetail` with `forms[].fields[]`. Use the **active** form (highe
 | Staff with `view_department_applications` | Same `department_id` as user |
 | Staff with `view_all_applications` or super admin | All |
 
-`GET /applications?status=pending&category_id=<uuid>&page=1&size=20`
+`GET /applications?status=pending&category_id=<uuid>&page=1&size=20&search=Ali`
+- The `search` parameter filters applications by matching the search term against application subject (case-insensitive).
+
 
 #### Create draft application
 
@@ -902,9 +906,11 @@ Use `download_url` in the browser/`url_launcher` — it expires (default 1 hour)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/audit-logs` | `view_all_applications` | Paginated audit trail |
+| GET | `/audit-logs` | `view_all_applications` | Paginated audit trail (supports `search` query parameter) |
 
-`GET /audit-logs?entity_type=application&entity_id=<uuid>&actor_id=<uuid>&page=1&size=50`
+`GET /audit-logs?entity_type=application&entity_id=<uuid>&actor_id=<uuid>&page=1&size=50&search=revert`
+- The `search` parameter filters audit logs by action, entity_type, or remarks.
+
 
 **Item:**
 
@@ -941,6 +947,49 @@ Use `download_url` in the browser/`url_launcher` — it expires (default 1 hour)
   "description": "Max attachment size in MB"
 }
 ```
+
+---
+
+### 6.11 Analytics — `/api/v1/analytics`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/analytics/overview` | `view_analytics` | High-level metrics counts |
+| GET | `/analytics/by-department` | `view_analytics` | Department category counts |
+| GET | `/analytics/turnaround` | `view_analytics` | Mean approval turnaround time per step |
+| GET | `/analytics/approval-rate` | `view_analytics` | Percentage rate of approved applications |
+| GET | `/analytics/bottlenecks` | `view_analytics` | Stuck or slow approval steps |
+
+All analytics endpoints support date filters: `GET /analytics/...?start_date=2026-01-01T00:00:00Z&end_date=2026-07-31T23:59:59Z`.
+
+---
+
+### 6.12 Dashboard — `/api/v1/dashboard`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/dashboard/summary` | User | Scoped summary metrics tailored to user role |
+
+Returns role-specific summaries (Student profile/pending/drafts, Officer queue metrics, or Admin general statistics).
+
+---
+
+### 6.13 AI Assistant — `/api/v1/applications/ai-draft`
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/applications/ai-draft` | `use_ai_assistant` | Pre-fill dynamic application responses |
+
+**Request Body:**
+```json
+{
+  "prompt": "I want to freeze my semester because I got a job offer",
+  "category_id": "category-uuid",
+  "form_id": "form-uuid"
+}
+```
+
+**Success Response `201`:** returns a prefilled Draft `ApplicationRead` matching form definitions.
 
 ---
 
@@ -1335,11 +1384,9 @@ These modules are **scaffolded only** — no REST routes yet:
 | Module | Planned |
 |--------|---------|
 | `attendance/` | GPS/BLE/hybrid attendance |
-| `analytics/` | Aggregated metrics |
-| `dashboard/` | Role dashboards |
-| `ai_services/` | AI application writer (`AIProvider`: OpenRouter, Groq, mock) |
 
 Do not call endpoints for these until Phase 2 is released. Watch repo changelog / OpenAPI tags.
+
 
 ---
 
@@ -1414,8 +1461,20 @@ Do not call endpoints for these until Phase 2 is released. Watch repo changelog 
 | | **System settings** | |
 | 55 | GET | `/api/v1/system-settings` |
 | 56 | PUT | `/api/v1/system-settings` |
+| | **Analytics** | |
+| 57 | GET | `/api/v1/analytics/overview` |
+| 58 | GET | `/api/v1/analytics/by-department` |
+| 59 | GET | `/api/v1/analytics/turnaround` |
+| 60 | GET | `/api/v1/analytics/approval-rate` |
+| 61 | GET | `/api/v1/analytics/bottlenecks` |
+| | **Dashboard** | |
+| 62 | GET | `/api/v1/dashboard/summary` |
+| | **AI Assistant & SLA / PDF** | |
+| 63 | POST | `/api/v1/applications/ai-draft` |
+| 64 | POST | `/api/v1/applications/check-slas` |
+| 65 | GET | `/api/v1/applications/{application_id}/export` |
 | | **Health** | |
-| 57 | GET | `/health` |
+| 66 | GET | `/health` |
 
 ---
 
@@ -1427,8 +1486,8 @@ Do not call endpoints for these until Phase 2 is released. Watch repo changelog 
 |--------|------|
 | Register | `GET /departments`, `POST /auth/register` |
 | Login | `POST /auth/login` |
-| Home | `GET /application-categories?enabled_only=true` |
-| New application | `GET /application-categories/{id}`, `POST /applications`, `POST /attachments`, `POST /applications/{id}/submit` |
+| Home | `GET /application-categories?enabled_only=true`, `GET /dashboard/summary` |
+| New application | `GET /application-categories/{id}`, `POST /applications`, `POST /attachments`, `POST /applications/{id}/submit`, `POST /applications/ai-draft` (AI Assistant pre-fill) |
 | My applications | `GET /applications` |
 | Application detail | `GET /applications/{id}`, `GET /applications/{id}/timeline` |
 | Notifications | `GET /notifications`, WebSocket, `POST …/read` |
@@ -1439,17 +1498,19 @@ Do not call endpoints for these until Phase 2 is released. Watch repo changelog 
 | Screen | APIs |
 |--------|------|
 | Login | `POST /auth/login` |
-| Dashboard shell | `GET /auth/me` |
+| Dashboard shell | `GET /auth/me`, `GET /dashboard/summary` |
 | Pending registrations | `GET /users?status=pending`, `PATCH /users/{id}/status` |
 | Users | `GET/POST/PATCH /users` |
 | Departments & programs | `/departments` CRUD |
 | Categories & form builder | `/application-categories` + forms/fields |
 | Workflows | `/workflows` CRUD |
-| Application queue | `GET /applications` |
-| Review application | `GET /applications/{id}`, `timeline`, `POST …/actions` |
-| Audit | `GET /audit-logs` |
-| Settings | `/system-settings` |
+| Application queue | `GET /applications` (supports `search` query parameter) |
+| Review application | `GET /applications/{id}`, `timeline`, `POST …/actions`, `GET /applications/{id}/export` (PDF Export) |
+| Analytics Dashboard | `GET /analytics/overview`, `GET /analytics/by-department`, `GET /analytics/turnaround`, `GET /analytics/approval-rate`, `GET /analytics/bottlenecks` |
+| Audit | `GET /audit-logs` (supports `search` query parameter) |
+| Settings | `/system-settings`, `POST /applications/check-slas` |
 
 ---
 
-*Document version: Phase 1 (backend commit matching modular monolith foundation). Update this file when Phase 2 endpoints are added.*
+*Document version: Phase 1.1 (backend completion with Analytics, Dashboards, and AI Assistant integration).*
+

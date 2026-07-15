@@ -116,3 +116,16 @@ class ApplicationRead(ORMBase):
 class ApplicationActionInput(BaseModel):
     action: WorkflowActionType
     remarks: str | None = None
+
+
+class AIDraftRequest(BaseModel):
+    prompt: str = Field(..., min_length=1)
+    form_id: uuid.UUID | None = None
+    category_id: uuid.UUID | None = None
+
+
+class SLAResult(BaseModel):
+    reminders_sent: int
+    threshold_hours: int
+
+

@@ -70,7 +70,8 @@ class WorkflowInstanceRepository(BaseRepository[WorkflowInstance]):
             select(WorkflowInstance)
             .where(WorkflowInstance.application_id == application_id)
             .options(
-                selectinload(WorkflowInstance.actions),
+                selectinload(WorkflowInstance.actions).selectinload(WorkflowAction.actor),
+                selectinload(WorkflowInstance.actions).selectinload(WorkflowAction.step),
                 selectinload(WorkflowInstance.current_step),
             )
         )

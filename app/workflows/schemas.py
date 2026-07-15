@@ -55,6 +55,12 @@ class WorkflowDefinitionRead(ORMBase):
     steps: list[WorkflowStepRead] = []
 
 
+class ActorRead(ORMBase):
+    id: uuid.UUID
+    full_name: str
+    email: str
+
+
 class WorkflowActionRead(ORMBase):
     id: uuid.UUID
     instance_id: uuid.UUID
@@ -65,6 +71,9 @@ class WorkflowActionRead(ORMBase):
     from_status: str | None = None
     to_status: str | None = None
     created_at: datetime
+    actor: ActorRead | None = None
+    step: WorkflowStepRead | None = None
+
 
 
 class WorkflowInstanceRead(ORMBase):

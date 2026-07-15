@@ -21,6 +21,8 @@ from app.roles.router import router as roles_router
 from app.system_settings.router import router as settings_router
 from app.users.router import router as users_router
 from app.workflows.router import router as workflows_router
+from app.analytics.router import router as analytics_router
+from app.dashboard.router import router as dashboard_router
 
 logger = get_logger("app")
 
@@ -70,6 +72,8 @@ def create_app() -> FastAPI:
     app.include_router(attachments_router, prefix=api)
     app.include_router(audit_router, prefix=api)
     app.include_router(settings_router, prefix=api)
+    app.include_router(analytics_router, prefix=api)
+    app.include_router(dashboard_router, prefix=api)
 
     @app.get("/health", tags=["Health"])
     async def health():

@@ -2,6 +2,10 @@
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.users.models import User
 
 from sqlalchemy import Boolean, DateTime
 from sqlalchemy import Enum as SAEnum
@@ -104,6 +108,7 @@ class Application(UUIDMixin, TimestampMixin, Base):
     responses: Mapped[list["ApplicationResponse"]] = relationship(
         back_populates="application", cascade="all, delete-orphan"
     )
+    student: Mapped["User"] = relationship(foreign_keys=[student_id])
 
 
 class ApplicationResponse(UUIDMixin, TimestampMixin, Base):

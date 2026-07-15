@@ -7,6 +7,8 @@ os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret")
 os.environ.setdefault("JWT_REFRESH_SECRET_KEY", "test-refresh-secret")
 os.environ.setdefault("STORAGE_BACKEND", "local")
+os.environ.setdefault("AI_DEFAULT_PROVIDER", "mock")
+
 
 import pytest
 import pytest_asyncio

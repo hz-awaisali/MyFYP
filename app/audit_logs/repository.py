@@ -19,6 +19,7 @@ class AuditLogRepository(BaseRepository[AuditLog]):
         entity_type: str | None = None,
         entity_id: uuid.UUID | None = None,
         actor_id: uuid.UUID | None = None,
+        term: str | None = None,
     ) -> tuple[list[AuditLog], int]:
         conditions = []
         if entity_type:
@@ -27,6 +28,13 @@ class AuditLogRepository(BaseRepository[AuditLog]):
             conditions.append(AuditLog.entity_id == entity_id)
         if actor_id:
             conditions.append(AuditLog.actor_id == actor_id)
+        if term:
+            like = f"%{term}%"
+            conditions.append(
+                AuditLog.action.ilike(like)
+                | AuditLog.entity_type.ilike(like)
+                | AuditLog.remarks.ilike(like)
+            )
 
         stmt = select(AuditLog)
         count_stmt = select(func.count()).select_from(AuditLog)
